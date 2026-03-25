@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.command // empty' | grep -qE '^(python3?|pip) ' && jq -r '.tool_input.command' | grep -qv '.venv/bin/' && jq -r '.tool_input.command' | grep -qv 'source .venv/bin/activate' && echo '{\"decision\":\"block\",\"reason\":\"Python commands must run inside the .venv. Prefix with: source .venv/bin/activate &&\"}' || true",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

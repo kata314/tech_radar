@@ -1,0 +1,165 @@
+# Tech Radar - ML Search, Recommendations, Agentic Shopping & Fraud
+#
+# Quadrants:
+#   models        - Models & Architectures
+#   infrastructure - Infrastructure & Platforms
+#   libraries     - Libraries & Frameworks
+#   techniques    - Techniques & Approaches
+#
+# Rings:
+#   adopt  - Proven, default choice
+#   trial  - Worth pursuing, used in production pilots
+#   assess - Worth exploring, not yet trialled
+#   hold   - Proceed with caution, moving away from
+
+last_updated: "2026-03-25"
+
+entries:
+
+  # ── Models & Architectures ──────────────────────────────────────
+
+- name: Two-Tower Models
+  quadrant: models
+  ring: adopt
+  description: >
+    Dual-encoder architecture for candidate retrieval in recommendations
+    and search. Scalable and battle-tested for large item catalogs.
+
+- name: Transformer-based Dense Retrieval
+  quadrant: models
+  ring: adopt
+  description: >
+    Dense passage/product retrieval using transformer encoders (e.g. E5, GTE).
+    Core to our semantic search stack.
+
+- name: Graph Neural Networks
+  quadrant: models
+  ring: trial
+  description: >
+    GNNs for fraud detection on transaction graphs and user-item interaction
+    modeling for recommendations.
+
+- name: LLM-augmented Search
+  quadrant: models
+  ring: trial
+  description: >
+    Using large language models to rerank, reformulate queries, and generate
+    search summaries. Piloting with GPT-4o and Claude for query understanding.
+
+- name: Mixture of Experts
+  quadrant: models
+  ring: assess
+  description: >
+    Sparse MoE architectures (e.g. Mixtral, DBRX) for cost-efficient
+    inference on large models. Evaluating for agentic shopping workflows.
+
+  # ── Infrastructure & Platforms ──────────────────────────────────
+
+- name: Ray
+  quadrant: infrastructure
+  ring: adopt
+  description: >
+    Distributed compute framework for training, tuning, and serving ML
+    models. Powers our batch and online inference pipelines.
+
+- name: MLflow
+  quadrant: infrastructure
+  ring: adopt
+  description: >
+    Experiment tracking, model registry, and deployment. Standard across
+    all team projects.
+
+- name: Kubernetes + KServe
+  quadrant: infrastructure
+  ring: adopt
+  description: >
+    Model serving on Kubernetes via KServe. Handles autoscaling, canary
+    rollouts, and multi-model serving.
+
+- name: vLLM
+  quadrant: infrastructure
+  ring: trial
+  description: >
+    High-throughput LLM serving engine with PagedAttention. Testing for
+    agentic shopping and search summarization workloads.
+
+- name: Feature Store (Feast)
+  quadrant: infrastructure
+  ring: trial
+  description: >
+    Centralized feature management for recommendations and fraud models.
+    Piloting Feast for online/offline feature consistency.
+
+  # ── Libraries & Frameworks ──────────────────────────────────────
+
+- name: PyTorch
+  quadrant: libraries
+  ring: adopt
+  description: >
+    Primary deep learning framework. Used across all model development
+    from prototyping to production.
+
+- name: FAISS
+  quadrant: libraries
+  ring: adopt
+  description: >
+    Facebook AI Similarity Search. Core vector index for nearest-neighbor
+    retrieval in search and recommendations.
+
+- name: XGBoost
+  quadrant: libraries
+  ring: adopt
+  description: >
+    Gradient boosted trees for fraud scoring, feature-rich ranking, and
+    tabular classification tasks.
+
+- name: Sentence Transformers
+  quadrant: libraries
+  ring: adopt
+  description: >
+    Library for computing dense text embeddings. Used for semantic search,
+    product matching, and query understanding.
+
+- name: LangGraph
+  quadrant: libraries
+  ring: trial
+  description: >
+    Framework for building stateful, multi-step LLM agent workflows.
+    Piloting for agentic shopping assistants.
+
+  # ── Techniques & Approaches ─────────────────────────────────────
+
+- name: Retrieval-Augmented Generation
+  quadrant: techniques
+  ring: trial
+  description: >
+    Combining retrieval with LLM generation for grounded product Q&A
+    and shopping assistance. Reducing hallucination in agent responses.
+
+- name: Contrastive Learning
+  quadrant: techniques
+  ring: trial
+  description: >
+    Self-supervised learning for embedding spaces. Applied to product
+    image-text alignment and search relevance.
+
+- name: Prompt Engineering
+  quadrant: techniques
+  ring: adopt
+  description: >
+    Structured prompting strategies (chain-of-thought, few-shot) for
+    agentic shopping and fraud investigation copilots.
+
+- name: Online Learning
+  quadrant: techniques
+  ring: assess
+  description: >
+    Incremental model updates from streaming data. Exploring for
+    real-time fraud detection and trending query adaptation.
+
+- name: RLHF / RLAIF
+  quadrant: techniques
+  ring: assess
+  description: >
+    Reinforcement learning from human/AI feedback to align shopping
+    agents with user preferences and safety constraints.

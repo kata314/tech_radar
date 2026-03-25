@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -m venv .venv)",
+      "Bash(source .venv/bin/activate)",
+      "Bash(pip install:*)",
+      "Bash(python radar.py validate)",
+      "Bash(python radar.py list)",
+      "Bash(python radar.py add \"Qdrant\" -q infrastructure -r assess -d \"Vector database for semantic search. Evaluating as managed alternative to FAISS for production workloads.\")",
+      "Bash(python radar.py add \"Qdrant\" -q infrastructure -r assess -d \"Vector database for semantic search. Evaluating as managed alternative to FAISS.\")",
+      "Bash(python radar.py add \"TestEntry\" -q models -r hold -d \"Temporary test entry\")",
+      "Bash(python radar.py remove \"TestEntry\")",
+      "Bash(grep -E \"\\\\.\\(yaml|py|html|md|yml|gitignore\\)$|^d\")",
+      "Bash(python3 radar.py list)",
+      "Bash(python3:*)",
+      "Bash(jq:*)"
+    ]
+  }
+}

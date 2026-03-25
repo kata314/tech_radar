@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tech Radar</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  h1 {
+    margin: 32px 0 6px;
+    font-size: 2rem;
+    font-weight: 600;
+    color: #fff;
+  }
+
+  .subtitle {
+    font-size: 1rem;
+    color: #888;
+    margin-bottom: 4px;
+  }
+
+  .last-updated {
+    font-size: 0.82rem;
+    color: #555;
+    margin-bottom: 20px;
+  }
+
+  #radar-container {
+    position: relative;
+    width: min(95vw, 960px);
+    height: min(95vw, 960px);
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Tooltip */
+  #tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: #16213e;
+    border: 1px solid #0f3460;
+    border-radius: 8px;
+    padding: 14px 18px;
+    max-width: 320px;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 10;
+  }
+  #tooltip .tt-name { font-weight: 700; font-size: 1.05rem; color: #fff; }
+  #tooltip .tt-meta { color: #aaa; margin: 4px 0 6px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
+  #tooltip .tt-desc { color: #ccc; }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 40px;
+    margin: 20px 0 36px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .legend-section h3 {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #666;
+    margin-bottom: 8px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: #aaa;
+    margin: 4px 0;
+  }
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .legend-ring {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #555;
+    flex-shrink: 0;
+  }
+
+  /* Blip list */
+  .blip-lists {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 32px;
+    max-width: 1100px;
+    width: 100%;
+    padding: 0 32px 64px;
+  }
+  .blip-list h3 {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid;
+  }
+  .blip-list ul { list-style: none; }
+  .blip-list li {
+    font-size: 0.9rem;
+    padding: 4px 0;
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+  .blip-list li:hover { color: #fff; }
+  .blip-list .ring-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    color: #666;
+    margin-top: 10px;
+    margin-bottom: 3px;
+    letter-spacing: 0.5px;
+  }
+
+  /* Responsive: stack blip lists on narrow screens */
+  @media (max-width: 800px) {
+    .blip-lists { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 480px) {
+    .blip-lists { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<h1>Tech Radar</h1>
+<p class="subtitle">ML · Search · Recommendations · Agentic Shopping · Fraud</p>
+<p class="last-updated" id="last-updated"></p>
+
+<div id="radar-container">
+  <svg id="radar" viewBox="0 0 960 960"></svg>
+  <div id="tooltip">
+    <div class="tt-name"></div>
+    <div class="tt-meta"></div>
+    <div class="tt-desc"></div>
+  </div>
+</div>
+
+<div class="legend" id="legend"></div>
+<div class="blip-lists" id="blip-lists"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"
+        integrity="sha384-+pxiN6T7yvpryuJmE1gM9PX7yQit15auDb+ZwwvJOd/4be2Cie5/IuVXgQb/S9du"
+        crossorigin="anonymous"></script>
+<script>
+
+const CONFIG = {
+  size: 960,
+  rings: [
+    { id: 'adopt',  label: 'Adopt',  radius: 0.25 },
+    { id: 'trial',  label: 'Trial',  radius: 0.50 },
+    { id: 'assess', label: 'Assess', radius: 0.75 },
+    { id: 'hold',   label: 'Hold',   radius: 1.00 },
+  ],
+  quadrants: [
+    { id: 'techniques',     label: 'Techniques',     angle: 0,   color: '#e94560' },
+    { id: 'libraries',      label: 'Libraries',      angle: 90,  color: '#3a86ff' },
+    { id: 'infrastructure', label: 'Infrastructure',  angle: 180, color: '#9b5de5' },
+    { id: 'models',         label: 'Models',          angle: 270, color: '#06d6a0' },
+  ],
+};
+
+const cx = CONFIG.size / 2;
+const cy = CONFIG.size / 2;
+const maxR = CONFIG.size / 2 - 50;
+
+// ── Deterministic placement ──────────────────────────────────────
+
+function seededRandom(seed) {
+  let s = seed;
+  return function() {
+    s = (s * 16807 + 0) % 2147483647;
+    return (s - 1) / 2147483646;
+  };
+}
+
+function hashString(str) {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash + str.charCodeAt(i)) & 0xffffffff;
+  }
+  return Math.abs(hash);
+}
+
+function placeBlips(entries) {
+  const placed = [];
+
+  entries.forEach(entry => {
+    const qi = CONFIG.quadrants.findIndex(q => q.id === entry.quadrant);
+    const ri = CONFIG.rings.findIndex(r => r.id === entry.ring);
+    if (qi < 0 || ri < 0) return;
+
+    const q = CONFIG.quadrants[qi];
+    const ring = CONFIG.rings[ri];
+    const prevRadius = ri > 0 ? CONFIG.rings[ri - 1].radius : 0;
+    const rng = seededRandom(hashString(entry.name));
+
+    const startAngle = (q.angle + 6) * Math.PI / 180;
+    const endAngle = (q.angle + 84) * Math.PI / 180;
+
+    let bestX, bestY, bestDist = -1;
+
+    for (let attempt = 0; attempt < 60; attempt++) {
+      const r = (prevRadius + (ring.radius - prevRadius) * (0.15 + 0.7 * rng())) * maxR;
+      const a = startAngle + rng() * (endAngle - startAngle);
+      const x = cx + r * Math.cos(a);
+      const y = cy + r * Math.sin(a);
+
+      let minDist = Infinity;
+      for (const p of placed) {
+        const d = Math.hypot(x - p.x, y - p.y);
+        if (d < minDist) minDist = d;
+      }
+      if (minDist > bestDist) {
+        bestDist = minDist;
+        bestX = x;
+        bestY = y;
+      }
+      if (bestDist >= 30) break;
+    }
+
+    entry.x = bestX;
+    entry.y = bestY;
+    entry.color = q.color;
+    entry.quadrantLabel = q.label;
+    entry.ringLabel = ring.label;
+    placed.push(entry);
+  });
+
+  return placed;
+}
+
+// ── SVG Rendering ────────────────────────────────────────────────
+
+function renderRadar(entries) {
+  const svg = document.getElementById('radar');
+  let html = '';
+
+  // Ring circles
+  for (let i = CONFIG.rings.length - 1; i >= 0; i--) {
+    const r = CONFIG.rings[i].radius * maxR;
+    const opacity = 0.06 + i * 0.025;
+    html += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(255,255,255,${opacity})" stroke="#444" stroke-width="1"/>`;
+  }
+
+  // Quadrant lines
+  CONFIG.quadrants.forEach(q => {
+    const a = q.angle * Math.PI / 180;
+    const x2 = cx + maxR * Math.cos(a);
+    const y2 = cy + maxR * Math.sin(a);
+    html += `<line x1="${cx}" y1="${cy}" x2="${x2}" y2="${y2}" stroke="#444" stroke-width="1"/>`;
+  });
+
+  // Ring labels — placed in each quadrant's midpoint angle for clarity
+  CONFIG.rings.forEach((ring, i) => {
+    const r = ring.radius * maxR;
+    const prevR = i > 0 ? CONFIG.rings[i-1].radius * maxR : 0;
+    const labelR = (r + prevR) / 2;
+    html += `<text x="${cx + labelR}" y="${cy - 8}" fill="#666" font-size="13" text-anchor="middle" font-weight="600">${ring.label}</text>`;
+  });
+
+  // Quadrant labels
+  CONFIG.quadrants.forEach(q => {
+    const a = (q.angle + 45) * Math.PI / 180;
+    const r = maxR * 0.93;
+    const x = cx + r * Math.cos(a);
+    const y = cy + r * Math.sin(a);
+    html += `<text x="${x}" y="${y}" fill="${q.color}" font-size="15" text-anchor="middle" font-weight="700" opacity="0.95">${q.label}</text>`;
+  });
+
+  // Blips
+  entries.forEach((entry, idx) => {
+    const blipR = 11;
+    html += `<circle cx="${entry.x}" cy="${entry.y}" r="${blipR}" fill="${entry.color}" stroke="#fff" stroke-width="1.5" opacity="0.9" class="blip" data-idx="${idx}" style="cursor:pointer"/>`;
+    html += `<text x="${entry.x}" y="${entry.y + 4}" fill="#fff" font-size="9" text-anchor="middle" font-weight="700" pointer-events="none">${idx + 1}</text>`;
+  });
+
+  svg.innerHTML = html;
+
+  // Tooltip interactions
+  const tooltip = document.getElementById('tooltip');
+  const container = document.getElementById('radar-container');
+  svg.querySelectorAll('.blip').forEach(el => {
+    el.addEventListener('mouseenter', e => {
+      const entry = entries[+el.dataset.idx];
+      tooltip.querySelector('.tt-name').textContent = entry.name;
+      tooltip.querySelector('.tt-meta').textContent = `${entry.quadrantLabel} · ${entry.ringLabel}`;
+      tooltip.querySelector('.tt-desc').textContent = entry.description;
+      tooltip.style.opacity = 1;
+    });
+    el.addEventListener('mousemove', e => {
+      const rect = container.getBoundingClientRect();
+      const x = e.clientX - rect.left + 18;
+      const y = e.clientY - rect.top - 12;
+      const containerW = rect.width;
+      const containerH = rect.height;
+      const ttH = tooltip.offsetHeight || 120;
+      tooltip.style.left = (x + 320 > containerW ? x - 340 : x) + 'px';
+      tooltip.style.top = (y + ttH > containerH ? y - ttH - 12 : y) + 'px';
+    });
+    el.addEventListener('mouseleave', () => { tooltip.style.opacity = 0; });
+  });
+}
+
+// ── Legend ────────────────────────────────────────────────────────
+
+function renderLegend() {
+  let html = '<div class="legend-section"><h3>Quadrants</h3>';
+  CONFIG.quadrants.forEach(q => {
+    html += `<div class="legend-item"><span class="legend-dot" style="background:${q.color}"></span>${q.label}</div>`;
+  });
+  html += '</div><div class="legend-section"><h3>Rings</h3>';
+  CONFIG.rings.forEach(r => {
+    html += `<div class="legend-item"><span class="legend-ring"></span>${r.label}</div>`;
+  });
+  html += '</div>';
+  document.getElementById('legend').innerHTML = html;
+}
+
+// ── Blip list ────────────────────────────────────────────────────
+
+function renderBlipLists(entries) {
+  const container = document.getElementById('blip-lists');
+  container.innerHTML = '';
+
+  CONFIG.quadrants.forEach(q => {
+    const qEntries = entries.filter(e => e.quadrant === q.id);
+    const section = document.createElement('div');
+    section.className = 'blip-list';
+    const h3 = document.createElement('h3');
+    h3.style.borderColor = q.color;
+    h3.style.color = q.color;
+    h3.textContent = q.label;
+    section.appendChild(h3);
+    const ul = document.createElement('ul');
+    CONFIG.rings.forEach(ring => {
+      const ringEntries = qEntries.filter(e => e.ring === ring.id);
+      if (ringEntries.length) {
+        const label = document.createElement('li');
+        label.className = 'ring-label';
+        label.textContent = ring.label;
+        ul.appendChild(label);
+        ringEntries.forEach(e => {
+          const li = document.createElement('li');
+          const num = document.createElement('strong');
+          num.textContent = `${entries.indexOf(e) + 1}. `;
+          li.appendChild(num);
+          li.appendChild(document.createTextNode(e.name));
+          ul.appendChild(li);
+        });
+      }
+    });
+    section.appendChild(ul);
+    container.appendChild(section);
+  });
+}
+
+// ── Load & Go ────────────────────────────────────────────────────
+
+async function main() {
+  try {
+    const resp = await fetch('radar.yaml');
+    if (!resp.ok) throw new Error(`Failed to fetch radar.yaml (HTTP ${resp.status})`);
+    const text = await resp.text();
+    const data = jsyaml.load(text);
+    if (!data || !data.entries) throw new Error('radar.yaml is missing or has no entries');
+    if (data.last_updated) {
+      document.getElementById('last-updated').textContent = `Last updated: ${data.last_updated}`;
+    }
+    const entries = placeBlips(data.entries);
+    renderRadar(entries);
+    renderLegend();
+    renderBlipLists(entries);
+  } catch (err) {
+    const errEl = document.createElement('p');
+    errEl.style.cssText = 'color:red;margin:40px';
+    errEl.textContent = `Failed to load radar.yaml: ${err.message}`;
+    document.body.appendChild(errEl);
+  }
+}
+
+main();
+</script>
+</body>
+</html>
